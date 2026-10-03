@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Добавить домой · Panier Malin{% endblock %}
+{% block content %}
+<p class="eyebrow">Покупка сохранена</p><h1>Добавить домой?</h1>
+<section class="card suggestion-card">
+  <h2>{{ suggestion.description }}</h2>
+  <p>Количество: {{ suggestion.quantity_milli|quantity }}{% if suggestion.quantity_milli is not none and suggestion.unit %} {{ suggestion.unit }}{% endif %}</p>
+  <p class="muted">Покупка ещё не изменила домашний запас. Программа ждёт вашего выбора.</p>
+  <form method="post" class="form-grid">
+    <label>Статус<select name="status">{% for value, label in statuses.items() %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+    <label>Место хранения<input name="location" placeholder="Например, холодильник"></label>
+    <div class="wide choice-actions"><button name="decision" value="accept">Да, добавить домой</button><button class="secondary" name="decision" value="decline">Нет, только покупка</button></div>
+  </form>
+</section>
+{% endblock %}

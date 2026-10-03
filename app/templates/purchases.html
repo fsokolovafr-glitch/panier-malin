@@ -17,6 +17,7 @@
         <label class="check"><input type="checkbox" name="included_in_budget" {% if purchase.included_in_budget %}checked{% endif %}> Учитывать в личном бюджете</label>
         <button>Сохранить изменения</button>
       </form>
+      {% if purchase.inventory_offer_status == 'pending' %}<p><a class="text-link" href="{{ url_for('web.purchase_home_suggestion', receipt_id=purchase.receipt_id) }}">Решить, добавлять ли это домой →</a></p>{% endif %}
     </article>
   {% endfor %}
   </div>

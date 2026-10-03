@@ -1,3 +1,59 @@
 {% extends "base.html" %}
 {% block title %}Дома · Panier Malin{% endblock %}
-{% block content %}<p class="eyebrow">Домашние запасы</p><h1>Дома</h1><section class="empty card"><h2>Раздел подготовлен</h2><p>Учёт количества, статусов и мест хранения будет реализован на этапе 3. Покупки не превращаются в домашние запасы автоматически.</p></section>{% endblock %}
+{% block content %}
+<div class="heading-row"><div><p class="eyebrow">Домашние запасы</p><h1>Дома</h1></div></div>
+
+<section class="card">
+  <h2>Добавить продукт</h2>
+  <p class="muted">Количество и место можно не указывать. Срок годности не додумывается.</p>
+  <form method="post" action="{{ url_for('web.save_home_inventory') }}" class="form-grid">
+    <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}-create">
+    <label class="wide">Продукт *<input name="product_name" required placeholder="Например, яйца"></label>
+    <label>Статус<select name="status" required>{% for value, label in statuses.items() %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+    <label>Количество<input name="quantity" inputmode="decimal" placeholder="Можно оставить пустым"></label>
+    <label>Единица<input name="unit" placeholder="шт., кг, упаковки"></label>
+    <label>Место хранения<input name="location" placeholder="Холодильник, морозилка, шкаф…"></label>
+    <label class="check wide"><input type="checkbox" name="quantity_is_approximate"> Количество приблизительное</label>
+    <div class="wide actions"><button>Сохранить запас</button></div>
+  </form>
+</section>
+
+<section>
+  <h2>Текущие запасы</h2>
+  {% if inventory %}
+    <div class="inventory-grid">
+    {% for item in inventory %}
+      <article class="card inventory-card">
+        <span class="badge status-{{ item.status }}">{{ statuses[item.status] }}</span>
+        <h2>{{ item.product_name }}</h2>
+        <p><strong>{{ '≈ ' if item.quantity_is_approximate }}{{ item.quantity_milli|quantity }}{% if item.quantity_milli is not none and item.unit %} {{ item.unit }}{% endif %}</strong></p>
+        <p class="muted">Место: {{ item.location or 'не указано' }}</p>
+        <details>
+          <summary>Изменить запас</summary>
+          <form method="post" action="{{ url_for('web.save_home_inventory') }}" class="stack-form">
+            <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}-edit-{{ item.id }}">
+            <label>Продукт<input name="product_name" value="{{ item.product_name }}" readonly></label>
+            <label>Статус<select name="status">{% for value, label in statuses.items() %}<option value="{{ value }}" {% if value == item.status %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label>Количество<input name="quantity" value="{% if item.quantity_milli is not none %}{{ item.quantity_milli|quantity }}{% endif %}" inputmode="decimal"></label>
+            <label>Единица<input name="unit" value="{{ item.unit or '' }}"></label>
+            <input type="hidden" name="location" value="{{ item.location or '' }}">
+            <label class="check"><input type="checkbox" name="quantity_is_approximate" {% if item.quantity_is_approximate %}checked{% endif %}> Приблизительно</label>
+            <button>Сохранить</button>
+          </form>
+        </details>
+        <form method="post" action="{{ url_for('web.move_home_inventory', inventory_id=item.id) }}" class="move-form">
+          <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}-move-{{ item.id }}">
+          <label>Переместить в<input name="location" value="{{ item.location or '' }}" placeholder="Морозилка"></label>
+          <button>Переместить</button>
+        </form>
+      </article>
+    {% endfor %}
+    </div>
+  {% else %}<section class="empty card"><h2>Запасов пока нет</h2><p>Добавьте первый продукт вручную или подтвердите предложение после покупки.</p></section>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Журнал изменений</h2>
+  {% if changes %}<ul class="timeline">{% for change in changes %}<li><strong>{{ change.product_name }}</strong> · {% if change.change_type == 'move' %}перемещение {{ change.from_location or 'без места' }} → {{ change.to_location or 'место не указано' }}{% elif change.change_type == 'purchase_add' %}добавлено из покупки после подтверждения{% elif change.change_type == 'create' %}запас создан{% else %}запас обновлён{% endif %}<span>{{ change.created_at }}</span></li>{% endfor %}</ul>{% else %}<p class="muted">Изменений пока нет.</p>{% endif %}
+</section>
+{% endblock %}

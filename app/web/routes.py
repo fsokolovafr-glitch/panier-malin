@@ -3,6 +3,19 @@ from uuid import uuid4
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 
+from app.services.inventory import (
+    INVENTORY_STATUSES,
+    SHOPPING_STATUSES,
+    add_purchase_to_inventory,
+    decline_purchase_suggestion,
+    get_purchase_suggestion,
+    list_inventory,
+    list_inventory_changes,
+    list_shopping_items,
+    move_inventory,
+    save_inventory,
+    save_shopping_item,
+)
 from app.services.purchases import (
     ValidationError,
     budget_summary,
@@ -72,9 +85,10 @@ def save_budget():
 def add_purchase():
     if request.method == "POST":
         try:
-            _receipt_id, created = create_purchase(database(), request.form)
+            receipt_id, created = create_purchase(database(), request.form)
             if created:
                 flash("Покупка сохранена.", "success")
+                return redirect(url_for("web.purchase_home_suggestion", receipt_id=receipt_id))
             else:
                 flash("Эта покупка уже была сохранена; дубль не создан.", "success")
             return redirect(url_for("web.purchases"))
@@ -112,9 +126,85 @@ def edit_purchase(receipt_id):
 
 @web.get("/home")
 def home_inventory():
-    return render_template("home.html", active="home")
+    return render_template(
+        "home.html",
+        active="home",
+        inventory=list_inventory(database()),
+        changes=list_inventory_changes(database()),
+        statuses=INVENTORY_STATUSES,
+        idempotency_key=str(uuid4()),
+    )
+
+
+@web.post("/home/save")
+def save_home_inventory():
+    try:
+        _inventory_id, changed = save_inventory(database(), request.form)
+        flash(
+            "Запас сохранён." if changed else "Это изменение уже было применено; дубль не создан.",
+            "success",
+        )
+    except ValidationError as error:
+        flash(str(error), "error")
+    return redirect(url_for("web.home_inventory"))
+
+
+@web.post("/home/<inventory_id>/move")
+def move_home_inventory(inventory_id):
+    try:
+        changed = move_inventory(database(), inventory_id, request.form)
+        flash(
+            "Место хранения изменено." if changed else "Повтор не изменил запас.",
+            "success",
+        )
+    except ValidationError as error:
+        flash(str(error), "error")
+    return redirect(url_for("web.home_inventory"))
+
+
+@web.route("/purchases/<receipt_id>/home-suggestion", methods=["GET", "POST"])
+def purchase_home_suggestion(receipt_id):
+    suggestion = get_purchase_suggestion(database(), receipt_id)
+    if not suggestion:
+        flash("Покупка не найдена.", "error")
+        return redirect(url_for("web.purchases"))
+    if request.method == "POST":
+        if request.form.get("decision") == "decline":
+            decline_purchase_suggestion(database(), receipt_id)
+            flash("Покупка не добавлена в домашние запасы.", "success")
+            return redirect(url_for("web.purchases"))
+        try:
+            _inventory_id, changed = add_purchase_to_inventory(database(), receipt_id, request.form)
+            flash(
+                "Продукт добавлен домой." if changed else "Эта покупка уже была добавлена домой; запас не удвоен.",
+                "success",
+            )
+            return redirect(url_for("web.home_inventory"))
+        except ValidationError as error:
+            flash(str(error), "error")
+    return render_template(
+        "home_suggestion.html",
+        active="add",
+        suggestion=suggestion,
+        statuses=INVENTORY_STATUSES,
+    )
 
 
 @web.get("/shopping")
 def shopping():
-    return render_template("shopping.html", active="shopping")
+    return render_template(
+        "shopping.html",
+        active="shopping",
+        groups=list_shopping_items(database()),
+        statuses=SHOPPING_STATUSES,
+    )
+
+
+@web.post("/shopping/save")
+def save_shopping():
+    try:
+        save_shopping_item(database(), request.form)
+        flash("Список покупок обновлён.", "success")
+    except ValidationError as error:
+        flash(str(error), "error")
+    return redirect(url_for("web.shopping"))

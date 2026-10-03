@@ -134,6 +134,7 @@ def list_purchases(database, query=""):
     with database.connect() as connection:
         return connection.execute(
             """SELECT r.id AS receipt_id, r.status, r.store, r.purchase_date, r.currency,
+                      r.inventory_offer_status,
                       r.included_in_budget, i.id AS item_id, i.description,
                       i.quantity_milli, i.unit, i.total_cents
                FROM receipts r

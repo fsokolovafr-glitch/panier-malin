@@ -1,3 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Купить · Panier Malin{% endblock %}
-{% block content %}<p class="eyebrow">Список покупок</p><h1>Купить</h1><section class="empty card"><h2>Раздел подготовлен</h2><p>Статусы «нужно купить», «скоро понадобится», «не покупать» и «опционально» будут реализованы на этапе 3.</p></section>{% endblock %}
+{% block content %}
+<p class="eyebrow">Список покупок</p><h1>Купить</h1>
+<section class="card">
+  <h2>Добавить в список</h2>
+  <p class="muted">Список не копирует историю чеков. Продукты со статусом «заканчивается» или «закончился» попадают в «нужно купить».</p>
+  <form method="post" action="{{ url_for('web.save_shopping') }}" class="inline-form">
+    <label>Продукт<input name="product_name" required placeholder="Например, молоко"></label>
+    <label>Группа<select name="status">{% for value, label in statuses.items() %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+    <button>Сохранить</button>
+  </form>
+</section>
+<section class="shopping-grid">
+  {% for status, label in statuses.items() %}
+    <article class="card shopping-group"><h2>{{ label }}</h2>{% if groups[status] %}<ul>{% for item in groups[status] %}<li><span>{{ item.product_name }}</span>{% if item.source == 'inventory_rule' %}<small>из запасов</small>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="muted">Пусто</p>{% endif %}</article>
+  {% endfor %}
+</section>
+{% endblock %}
