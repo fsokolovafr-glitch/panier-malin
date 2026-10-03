@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Обзор · Panier Malin{% endblock %}
+{% block content %}
+<div class="heading-row">
+  <div><p class="eyebrow">Ваш месяц</p><h1>Обзор</h1></div>
+  <form method="get" class="compact-form">
+    <label>Месяц <input type="month" name="month" value="{{ month }}" required></label>
+    <button>Показать</button>
+  </form>
+</div>
+
+{% if summaries %}
+  <section class="card-grid">
+    {% for currency, summary in summaries.items() %}
+      <article class="card accent-card">
+        <p class="muted">Потрачено · {{ currency }}</p>
+        <strong class="big-number">{{ summary.spent_cents|money }} {{ currency }}</strong>
+        {% if summary.limit_cents is not none %}
+          {% set remaining = summary.limit_cents - summary.spent_cents %}
+          <p>Бюджет: {{ summary.limit_cents|money }} {{ currency }}</p>
+          <p>Осталось: {{ remaining|money }} {{ currency }}</p>
+          <progress max="{{ summary.limit_cents or 1 }}" value="{{ summary.spent_cents }}"></progress>
+        {% else %}
+          <p class="muted">Лимит не задан — показаны только фактические расходы.</p>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="empty card"><h2>Расходов пока нет</h2><p>Добавьте подтверждённую покупку с датой, чтобы увидеть итог месяца.</p><a class="button" href="{{ url_for('web.add_purchase') }}">Добавить покупку</a></section>
+{% endif %}
+
+<section class="card">
+  <h2>Месячный бюджет</h2>
+  <p class="muted">Необязательно. Оставьте сумму пустой, чтобы удалить лимит.</p>
+  <form method="post" action="{{ url_for('web.save_budget') }}" class="inline-form">
+    <label>Месяц <input type="month" name="month" value="{{ month }}" required></label>
+    <label>Валюта <input name="currency" value="{{ default_currency }}" maxlength="3" required></label>
+    <label>Лимит <input name="amount" inputmode="decimal" placeholder="например, 350,00"></label>
+    <button>Сохранить</button>
+  </form>
+</section>
+
+<section class="two-column">
+  <article class="card"><h2>Категории</h2>{% if categories %}<ul class="summary-list">{% for row in categories %}<li><span>{{ row.label }}</span><strong>{{ row.total_cents|money }} {{ row.currency }}</strong></li>{% endfor %}</ul>{% else %}<p class="muted">Нет данных за выбранный месяц.</p>{% endif %}</article>
+  <article class="card"><h2>Магазины</h2>{% if stores %}<ul class="summary-list">{% for row in stores %}<li><span>{{ row.label }}</span><strong>{{ row.total_cents|money }} {{ row.currency }}</strong></li>{% endfor %}</ul>{% else %}<p class="muted">Нет данных за выбранный месяц.</p>{% endif %}</article>
+</section>
+{% endblock %}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Panier Malin{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('web.overview') }}">Panier Malin</a>
+    <span>Продукты · бюджет и запасы</span>
+  </header>
+  <main class="page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="notice {{ category }}" role="status">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <nav class="nav" aria-label="Основные разделы">
+    <a class="{{ 'active' if active == 'overview' }}" href="{{ url_for('web.overview') }}"><span>⌂</span>Обзор</a>
+    <a class="{{ 'active' if active == 'add' }}" href="{{ url_for('web.add_purchase') }}"><span>＋</span>Добавить</a>
+    <a class="{{ 'active' if active == 'purchases' }}" href="{{ url_for('web.purchases') }}"><span>≡</span>Покупки</a>
+    <a class="{{ 'active' if active == 'home' }}" href="{{ url_for('web.home_inventory') }}"><span>⌂</span>Дома</a>
+    <a class="{{ 'active' if active == 'shopping' }}" href="{{ url_for('web.shopping') }}"><span>✓</span>Купить</a>
+  </nav>
+</body>
+</html>

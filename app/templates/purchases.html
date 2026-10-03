@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Покупки · Panier Malin{% endblock %}
+{% block content %}
+<div class="heading-row"><div><p class="eyebrow">Все записи</p><h1>Покупки</h1></div><a class="button" href="{{ url_for('web.add_purchase') }}">＋ Добавить</a></div>
+<form method="get" class="search"><input type="search" name="query" value="{{ query }}" placeholder="Найти товар или магазин"><button>Найти</button></form>
+{% if purchases %}
+  <div class="purchase-list">
+  {% for purchase in purchases %}
+    <article class="card purchase">
+      <div class="purchase-main">
+        <div><span class="badge {{ purchase.status }}">{{ 'Подтверждена' if purchase.status == 'confirmed' else 'Черновик' }}</span><h2>{{ purchase.description }}</h2><p class="muted">{{ purchase.store or 'Магазин не указан' }} · {{ purchase.purchase_date or 'Дата не указана' }}</p><p class="muted">Количество: {{ purchase.quantity_milli|quantity }}{% if purchase.unit %} {{ purchase.unit }}{% endif %}</p></div>
+        <strong class="price">{{ purchase.total_cents|money }}{% if purchase.total_cents is not none %} {{ purchase.currency }}{% endif %}</strong>
+      </div>
+      <form method="post" action="{{ url_for('web.edit_purchase', receipt_id=purchase.receipt_id, query=query) }}" class="edit-form">
+        <label>Исправить сумму<input name="total" inputmode="decimal" value="{% if purchase.total_cents is not none %}{{ purchase.total_cents|money }}{% endif %}"></label>
+        <label class="check"><input type="checkbox" name="confirmed" {% if purchase.status == 'confirmed' %}checked{% endif %}> Подтверждена</label>
+        <label class="check"><input type="checkbox" name="included_in_budget" {% if purchase.included_in_budget %}checked{% endif %}> Учитывать в личном бюджете</label>
+        <button>Сохранить изменения</button>
+      </form>
+    </article>
+  {% endfor %}
+  </div>
+{% else %}<section class="empty card"><h2>Ничего не найдено</h2><p>Измените запрос или добавьте первую покупку.</p></section>{% endif %}
+{% endblock %}

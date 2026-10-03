@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Добавить · Panier Malin{% endblock %}
+{% block content %}
+<p class="eyebrow">Новая запись</p><h1>Что купили или что изменилось дома?</h1>
+<section class="card">
+  <h2>Добавить покупку вручную</h2>
+  <p class="muted">Заполняйте только известное. Программа не подставляет цену, количество, магазин или дату.</p>
+  <form method="post" class="form-grid">
+    <input type="hidden" name="idempotency_key" value="{{ values.get('idempotency_key', idempotency_key) }}">
+    <label class="wide">Что купили *<input name="description" value="{{ values.get('description', '') }}" required placeholder="Например, молоко"></label>
+    <label>Общая сумма<input name="total" value="{{ values.get('total', '') }}" inputmode="decimal" placeholder="1,50"></label>
+    <label>Валюта<input name="currency" value="{{ values.get('currency', default_currency) }}" maxlength="3" required></label>
+    <label>Количество<input name="quantity" value="{{ values.get('quantity', '') }}" inputmode="decimal" placeholder="2"></label>
+    <label>Единица<input name="unit" value="{{ values.get('unit', '') }}" placeholder="шт., кг, упаковки"></label>
+    <label>Магазин<input name="store" value="{{ values.get('store', '') }}" placeholder="Необязательно"></label>
+    <label>Дата покупки<input type="date" name="purchase_date" value="{{ values.get('purchase_date', '') }}"></label>
+    <label class="wide">Категория<input name="category" value="{{ values.get('category', '') }}" placeholder="Например, молочные продукты"></label>
+    <label class="check wide"><input type="checkbox" name="draft" {% if values.get('draft') %}checked{% endif %}> Сохранить как черновик — не учитывать в расходах</label>
+    <div class="wide actions"><button type="submit">Сохранить покупку</button></div>
+  </form>
+</section>
+<section class="card muted-card"><h2>Фото или PDF чека</h2><p>Распознавание чеков появится на этапе 4. Сейчас доступен честный ручной ввод; загрузка без OCR не выдаётся за готовую функцию.</p></section>
+{% endblock %}
